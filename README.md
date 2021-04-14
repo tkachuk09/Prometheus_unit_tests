@@ -1,3 +1,5 @@
+**If you do not have a** `promtool` **to check your alerts follow the instructions below:**
+
 *1*. **Install promtool and set up the environment:**
 
 `docker pull ishario/promtool:1.0.0`

@@ -1,0 +1,27 @@
+# This is the rules file
+
+groups:
+  - name: health_jobs
+    rules:
+
+      - alert: PrometheusConfigurationReload
+        expr: prometheus_config_last_reload_successful != 1
+        for: 5m
+        labels:
+          severity: error
+          tracker: l3-team
+        annotations:
+          summary: "Prometheus configuration reload on `{{ $labels.instance }}`"
+          description: "Prometheus configuration reload error"          # delete '/n' line from original alert for convenience
+          value: "{{ humanize $value }}"
+
+      - alert: AlertmanagerConfigurationReload
+        expr: alertmanager_config_last_reload_successful != 1
+        for: 5m
+        labels:
+          severity: error
+          tracker: l3-team
+        annotations:
+          summary: "AlertManager configuration reload on `{{ $labels.instance }}`"
+          description: "AlertManager configuration reload error"
+          value: "{{ humanize $value }}"

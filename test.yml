@@ -1,0 +1,48 @@
+# This is the main input for unit testing.
+
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+
+  - interval: 1m
+    # Series data
+    input_series:
+      - series: 'prometheus_config_last_reload_successful{job="kubernetes_service_monitoring", instance="prometheus"}'
+        values: '0 0 0 0 0 0 0 0 0'
+      - series: 'alertmanager_config_last_reload_successful{job="kubernetes_pods_monitoring", instance="alertmanager-0"}'
+        values: '0 0 0 0 0 0 0 0 0'
+
+    # Unit test for alerting rules
+    alert_rule_test:
+      # Unit test 1
+      - eval_time: 5m
+        alertname: PrometheusConfigurationReload
+        exp_alerts:
+          # Alert 1
+          - exp_labels:
+              severity: error
+              tracker: l3-team
+              instance: prometheus
+              job: kubernetes_service_monitoring
+            exp_annotations:
+              summary: Prometheus configuration reload on `prometheus`
+              description: Prometheus configuration reload error
+              value: 0
+
+      # Unit test 2
+      - eval_time: 5m
+        alertname: AlertmanagerConfigurationReload
+        exp_alerts:
+          # Alert 2
+          - exp_labels:
+              severity: error
+              tracker: l3-team
+              instance: alertmanager-0
+              job: kubernetes_pods_monitoring
+            exp_annotations:
+              summary: AlertManager configuration reload on `alertmanager-0`
+              description: AlertManager configuration reload error
+              value: 0
