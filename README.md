@@ -1,4 +1,4 @@
-**If you do not have a** `promtool` **to check your alerts follow the instructions below:**
+**If you do not have a** `promtool` **to check your rules follow the instructions below:**
 
 *1*. **Install promtool and set up the environment:**
 
