@@ -11,9 +11,9 @@ tests:
     # Series data
     input_series:
       - series: 'prometheus_config_last_reload_successful{job="kubernetes_service_monitoring", instance="prometheus"}'
-        values: '0 0 0 0 0 0 0 0 0'
+        values: '0+0х10' # 0 0 0 0 0 0 0 0 0 0 
       - series: 'alertmanager_config_last_reload_successful{job="kubernetes_pods_monitoring", instance="alertmanager-0"}'
-        values: '0 0 0 0 0 0 0 0 0'
+        values: '0+0х10' # 0 0 0 0 0 0 0 0 0 0
 
     # Unit test for alerting rules
     alert_rule_test:
