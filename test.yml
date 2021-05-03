@@ -10,18 +10,44 @@ tests:
   - interval: 1m
     # Series data
     input_series:
+      - series: 'up{job="federate"}'
+        values: '0+0x10'       # 0 0 0 0 0 0 0 0 0 0
       - series: 'prometheus_config_last_reload_successful{job="kubernetes_service_monitoring", instance="prometheus"}'
-        values: '0+0х10' # 0 0 0 0 0 0 0 0 0 0 
+        values: '0+0x10'       # 0 0 0 0 0 0 0 0 0 0
       - series: 'alertmanager_config_last_reload_successful{job="kubernetes_pods_monitoring", instance="alertmanager-0"}'
-        values: '0+0х10' # 0 0 0 0 0 0 0 0 0 0
+        values: '0+0x10'       # 0 0 0 0 0 0 0 0 0 0
+      - series: 'netdata_netfilter_conntrack_errors_events_persec_average'
+        values: '0-1x5'
+      - series: 'mongodb_replset_oplog_head_timestamp'
+        values: '0+6100x10'    # Increasing by 6100 makes sure that rate(...) will be above 100. (6100 / 60 > 100)
+      - series: 'mongodb_connections{state="current",cluster="monolith"}'
+        values: '20000+100x10' # (100x10) + 20000 = 21000 > 20000
+      - series: 'rabbitmq_queue_messages_redelivered_total'
+        values: '0+610x10'     # Increasing by 610 makes sure that rate(...) will be above 100. (610 / 60 > 100)
+      - series: 'kube_deployment_status_replicas_unavailable{job="kubernetes_pods_sentry_01",k8s_cluster="sentry_01"}'
+        values: '1+0x10'
 
     # Unit test for alerting rules
     alert_rule_test:
+
       # Unit test 1
+      - eval_time: 10m
+        alertname:  PrometheusSlaveIsDown
+        exp_alerts:
+          # Alert 1
+          - exp_labels:
+              severity: error
+              tracker: l3-team
+              job: federate
+            exp_annotations:
+              summary: Prometheus scrape for `` is down
+              description: Can't get metrics from prometheus-slave
+              value: 0
+      # Unit test 2
       - eval_time: 5m
         alertname: PrometheusConfigurationReload
         exp_alerts:
-          # Alert 1
+          # Alert 2
           - exp_labels:
               severity: error
               tracker: l3-team
@@ -31,12 +57,11 @@ tests:
               summary: Prometheus configuration reload on `prometheus`
               description: Prometheus configuration reload error
               value: 0
-
-      # Unit test 2
+      # Unit test 3
       - eval_time: 5m
         alertname: AlertmanagerConfigurationReload
         exp_alerts:
-          # Alert 2
+          # Alert 3
           - exp_labels:
               severity: error
               tracker: l3-team
@@ -46,3 +71,69 @@ tests:
               summary: AlertManager configuration reload on `alertmanager-0`
               description: AlertManager configuration reload error
               value: 0
+      # Unit test 4
+      - eval_time: 10m
+        alertname: СonntrackOverflow
+        exp_alerts:
+          # Alert 4
+          - exp_labels:
+              severity: error
+              tracker: l3-team
+            exp_annotations:
+              summary: Conntrack is full on ``
+              value: -5
+      # Unit test 5
+      - eval_time: 5m
+        alertname: MongoDbReplicationOpLogLag
+        exp_alerts:
+          # Alert 5
+          - exp_labels:
+              owner: dba-team
+              tracker: l3-team
+              severity: warning
+            exp_annotations:
+              summary: MongoDB replicaSet oplog is too high on instance ``
+              value: 101.7
+      # Unit test 6
+      - eval_time: 10m
+        alertname: MongodbMonolithTooManyConnections
+        exp_alerts:
+          # Alert 6
+          - exp_labels:
+              cluster: monolith
+              owner: dba-team
+              tracker: l3-team
+              severity: warning
+              state: current
+            exp_annotations:
+              summary: MongoDB too many connections on `` (over 20000)
+              description: Too many connections
+              value: 21k
+      # Unit test 7
+      - eval_time: 5m
+        alertname: RabbitmqRedeliveredMessages
+        exp_alerts:
+          # Alert 7
+          - exp_labels:
+              service: rabbitmq
+              target: rabbitmq_queue_messages
+              tracker: l3-team
+              severity: warning
+            exp_annotations:
+              summary: Redelivered messages on ``
+              description: 10> redelivered messages on ``
+              value: 10.17
+      # Unit test 8
+      - eval_time: 10m
+        alertname: NoWorkingPodsSentry01
+        exp_alerts:
+          # Alert 8
+          - exp_labels:
+              severity: critical
+              tracker: l3-team
+              job: kubernetes_pods_sentry_01
+              k8s_cluster: sentry_01
+            exp_annotations:
+              description: No available working pods
+              summary: No working pods in the deployment `` on cluster `sentry_01`. Node - ``
+              value: 1

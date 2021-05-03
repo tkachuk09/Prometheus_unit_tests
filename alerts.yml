@@ -4,6 +4,16 @@ groups:
   - name: health_jobs
     rules:
 
+      - alert: PrometheusSlaveIsDown
+        expr: up{job="federate"} == 0
+        for: 10m
+        labels:
+          severity: error
+          tracker: l3-team
+        annotations:
+          summary: "Prometheus scrape for `{{ $labels.instance }}` is down"
+          description: "Can't get metrics from prometheus-slave"
+          value: "{{ humanize $value }}"
       - alert: PrometheusConfigurationReload
         expr: prometheus_config_last_reload_successful != 1
         for: 5m
@@ -14,9 +24,8 @@ groups:
           summary: "Prometheus configuration reload on `{{ $labels.instance }}`"
           description: "Prometheus configuration reload error"          # delete '/n' line from original alert for convenience
           value: "{{ humanize $value }}"
-
       - alert: AlertmanagerConfigurationReload
-        expr: alertmanager_config_last_reload_successful != 1
+        expr: alertmanager_config_last_reload_successful !=1
         for: 5m
         labels:
           severity: error
@@ -25,3 +34,69 @@ groups:
           summary: "AlertManager configuration reload on `{{ $labels.instance }}`"
           description: "AlertManager configuration reload error"
           value: "{{ humanize $value }}"
+      - alert: СonntrackOverflow
+        expr: netdata_netfilter_conntrack_errors_events_persec_average < 0
+        for: 5m
+        labels:
+          severity: error
+          tracker: l3-team
+        annotations:
+          summary: "Conntrack is full on `{{ $labels.instance }}`"
+          value: "{{ humanize $value }}"
+
+  - name: mongodb
+    rules:
+
+      - alert: MongoDbReplicationOpLogLag
+        expr: rate(mongodb_replset_oplog_head_timestamp[1m]) > 100
+        for: 2m
+        labels:
+          owner: dba-team
+          tracker: l3-team
+          severity: warning
+        annotations:
+          summary: "MongoDB replicaSet oplog is too high on instance `{{ $labels.instance }}`"
+          value: "{{ humanize $value }}"
+      - alert: MongodbMonolithTooManyConnections
+        expr: mongodb_connections{state="current",cluster="monolith"} > 20000
+        for: 5m
+        labels:
+          owner: dba-team
+          tracker: l3-team
+          severity: warning
+        annotations:
+          summary: "MongoDB too many connections on `{{ $labels.instance }}` (over 20000)"
+          description: "Too many connections"
+          value: "{{ humanize $value }}"
+
+  - name: rabbitmq
+    rules:
+
+      - alert: RabbitmqRedeliveredMessages
+        expr: rate(rabbitmq_queue_messages_redelivered_total[1m]) >10
+        for: 2m
+        labels:
+          service: rabbitmq
+          target: rabbitmq_queue_messages
+          tracker: l3-team
+          severity: warning
+        annotations:
+          summary: "Redelivered messages on `{{ $labels.instance }}`"
+          description: "10> redelivered messages on `{{ $labels.instance }}`" # changed a description from original alert
+          value: "{{ humanize $value }}"
+
+  - name: high_pressure
+    rules:
+
+      - alert: NoWorkingPodsSentry01
+        expr: kube_deployment_status_replicas_unavailable{job="kubernetes_pods_sentry_01",k8s_cluster="sentry_01"} > 0
+        for: 10m
+        labels:
+          severity: critical
+          tracker: l3-team
+        annotations:
+          description: "No available working pods"
+          summary: "No working pods in the deployment `{{ $labels.deployment }}` on cluster `{{ $labels.k8s_cluster }}`. Node - `{{ $labels.node }}`" # changing ':' to the '-' for convenience
+          value: "{{ humanize $value }}"
+
+
