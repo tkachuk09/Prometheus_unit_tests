@@ -23,7 +23,7 @@ tests:
       - series: 'mongodb_connections{state="current",cluster="monolith"}'
         values: '20000+100x10' # (100x10) + 20000 = 21000 > 20000
       - series: 'rabbitmq_queue_messages_redelivered_total'
-        values: '0+610x10'     # Increasing by 610 makes sure that rate(...) will be above 100. (610 / 60 > 100)
+        values: '0+610x10'     # Increasing by 610 makes sure that rate(...) will be above 10. (610 / 60 > 100)
       - series: 'kube_deployment_status_replicas_unavailable{job="kubernetes_pods_sentry_01",k8s_cluster="sentry_01"}'
         values: '1+0x10'
 
